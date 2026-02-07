@@ -1,4 +1,3 @@
-!pip install git+https://github.com/fra31/auto-attack
 # autoattack_experiment.py
 import torch
 import torch.nn as nn
