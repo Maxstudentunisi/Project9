@@ -4,7 +4,6 @@ from torch.utils.data import DataLoader, Subset
 from torchvision import datasets, transforms
 from autoattack import AutoAttack
 import matplotlib.pyplot as plt
-import os
 
 from models import get_model
 
@@ -74,7 +73,6 @@ for name, model in models.items():
     print(f"{name}: {acc:.2f}%")
 
 # genero adversarial examples
-os.makedirs('adversarial_examples', exist_ok=True)
 adv_examples = {}
 
 print("\nGenerating adversarial examples:")
@@ -114,10 +112,8 @@ for i, name in enumerate(model_names):
         print(f"{results[i,j]:18.2f}", end=" ")
     print()
 
-# salvo matrice
-np.save('adversarial_examples/transfer_matrix.npy', results)
-
-# visualizzazione
+# VISUALIZZAZIONE 1: Esempi adversarial per ogni modello
+print("\nMostrando esempi adversarial per ogni modello...")
 n_show = 10
 for name in model_names:
     fig, axes = plt.subplots(3, n_show, figsize=(15, 4))
@@ -143,10 +139,10 @@ for name in model_names:
     
     plt.suptitle(f'{name} - eps={eps}')
     plt.tight_layout()
-    plt.savefig(f'adversarial_examples/{name}_vis.png', dpi=120)
-    plt.close()
+    plt.show()
 
-# heatmap
+# VISUALIZZAZIONE 2: Heatmap transferability
+print("\nMostrando heatmap transferability...")
 fig, ax = plt.subplots(figsize=(12, 10))
 im = ax.imshow(results, cmap='RdYlGn', vmin=0, vmax=100)
 plt.colorbar(im)
@@ -156,7 +152,7 @@ ax.set_xticklabels(model_names, rotation=45, ha='right')
 ax.set_yticklabels(model_names)
 ax.set_xlabel('Tested on')
 ax.set_ylabel('Adversarial from')
-ax.set_title('Transferability')
+ax.set_title('Transferability Matrix')
 
 for i in range(len(model_names)):
     for j in range(len(model_names)):
@@ -164,7 +160,6 @@ for i in range(len(model_names)):
         ax.text(j, i, f'{results[i,j]:.1f}', ha="center", va="center", color=color, fontsize=8)
 
 plt.tight_layout()
-plt.savefig('adversarial_examples/heatmap.png', dpi=120)
-plt.close()
+plt.show()
 
-print("\nDone! Results in adversarial_examples/")
+print("\nDone!")
