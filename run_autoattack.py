@@ -24,14 +24,44 @@ x_test, y_test = next(iter(loader))
 x_test = x_test.to(device)
 y_test = y_test.to(device)
 
-# carico i modelli
+# carico i 6 modelli
 models = {}
-for model_name in ["cnn_light", "cnn_deep", "mlp"]:
-    m = get_model(model_name).to(device)
-    ckpt = torch.load(f"checkpoints/{model_name}_noaug_best.pt", map_location=device)
-    m.load_state_dict(ckpt["state_dict"])
-    m.eval()
-    models[model_name] = m
+
+# cnn_light noaug
+m = get_model("cnn_light").to(device)
+m.load_state_dict(torch.load("checkpoints/cnn_light_noaug_best.pt", map_location=device)["state_dict"])
+m.eval()
+models["cnn_light_noaug"] = m
+
+# cnn_light aug
+m = get_model("cnn_light").to(device)
+m.load_state_dict(torch.load("checkpoints/cnn_light_aug_best.pt", map_location=device)["state_dict"])
+m.eval()
+models["cnn_light_aug"] = m
+
+# cnn_deep noaug
+m = get_model("cnn_deep").to(device)
+m.load_state_dict(torch.load("checkpoints/cnn_deep_noaug_best.pt", map_location=device)["state_dict"])
+m.eval()
+models["cnn_deep_noaug"] = m
+
+# cnn_deep aug
+m = get_model("cnn_deep").to(device)
+m.load_state_dict(torch.load("checkpoints/cnn_deep_aug_best.pt", map_location=device)["state_dict"])
+m.eval()
+models["cnn_deep_aug"] = m
+
+# mlp noaug
+m = get_model("mlp").to(device)
+m.load_state_dict(torch.load("checkpoints/mlp_noaug.pt", map_location=device)["state_dict"])
+m.eval()
+models["mlp_noaug"] = m
+
+# mlp aug
+m = get_model("mlp").to(device)
+m.load_state_dict(torch.load("checkpoints/mlp_aug.pt", map_location=device)["state_dict"])
+m.eval()
+models["mlp_aug"] = m
 
 print("Modelli caricati:", list(models.keys()))
 
@@ -74,14 +104,14 @@ for i, adv_source in enumerate(model_names):
         results[i, j] = acc
 
 # stampo matrice
-print("\n           ", end="")
+print("\n" + " "*20, end="")
 for name in model_names:
-    print(f"{name:12}", end=" ")
+    print(f"{name:18}", end=" ")
 print()
 for i, name in enumerate(model_names):
-    print(f"{name:10}", end=" ")
+    print(f"{name:18}", end=" ")
     for j in range(len(model_names)):
-        print(f"{results[i,j]:12.2f}", end=" ")
+        print(f"{results[i,j]:18.2f}", end=" ")
     print()
 
 # salvo matrice
@@ -117,12 +147,12 @@ for name in model_names:
     plt.close()
 
 # heatmap
-fig, ax = plt.subplots(figsize=(8, 6))
+fig, ax = plt.subplots(figsize=(12, 10))
 im = ax.imshow(results, cmap='RdYlGn', vmin=0, vmax=100)
 plt.colorbar(im)
 ax.set_xticks(range(len(model_names)))
 ax.set_yticks(range(len(model_names)))
-ax.set_xticklabels(model_names)
+ax.set_xticklabels(model_names, rotation=45, ha='right')
 ax.set_yticklabels(model_names)
 ax.set_xlabel('Tested on')
 ax.set_ylabel('Adversarial from')
@@ -131,7 +161,7 @@ ax.set_title('Transferability')
 for i in range(len(model_names)):
     for j in range(len(model_names)):
         color = 'white' if results[i, j] < 50 else 'black'
-        ax.text(j, i, f'{results[i,j]:.1f}', ha="center", va="center", color=color)
+        ax.text(j, i, f'{results[i,j]:.1f}', ha="center", va="center", color=color, fontsize=8)
 
 plt.tight_layout()
 plt.savefig('adversarial_examples/heatmap.png', dpi=120)
