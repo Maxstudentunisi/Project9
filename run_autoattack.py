@@ -6,16 +6,12 @@ from autoattack import AutoAttack
 
 from models import get_model
 
-# =======================
 # PARAMETERS
-# =======================
 eps = 0.3
 n_test = 1000
 device = 'cpu'
 
-# =======================
 # LOAD MNIST TEST SET
-# =======================
 transform = transforms.ToTensor()
 test_data = datasets.MNIST('./data', train=False, transform=transform, download=True)
 
@@ -23,9 +19,7 @@ idx = np.random.choice(len(test_data), n_test, replace=False)
 x_test = torch.stack([test_data[i][0] for i in idx]).to(device)
 y_test = torch.tensor([test_data[i][1] for i in idx]).to(device)
 
-# =======================
 # LOAD MODELS
-# =======================
 models = {}
 
 def load(name, arch, ckpt):
@@ -35,27 +29,23 @@ def load(name, arch, ckpt):
     models[name] = m
 
 load("cnn_light_noaug", "cnn_light", "checkpoints/cnn_light_noaug_best.pt")
-load("cnn_light_aug",   "cnn_light", "checkpoints/cnn_light_aug_best.pt")
-load("cnn_deep_noaug",  "cnn_deep",  "checkpoints/cnn_deep_noaug_best.pt")
-load("cnn_deep_aug",    "cnn_deep",  "checkpoints/cnn_deep_aug_best.pt")
-load("mlp_noaug",       "mlp",       "checkpoints/mlp_noaug.pt")
-load("mlp_aug",         "mlp",       "checkpoints/mlp_aug.pt")
+load("cnn_light_aug", "cnn_light", "checkpoints/cnn_light_aug_best.pt")
+load("cnn_deep_noaug", "cnn_deep", "checkpoints/cnn_deep_noaug_best.pt")
+load("cnn_deep_aug", "cnn_deep", "checkpoints/cnn_deep_aug_best.pt")
+load("mlp_noaug", "mlp", "checkpoints/mlp_noaug.pt")
+load("mlp_aug", "mlp", "checkpoints/mlp_aug.pt")
 
 model_names = list(models.keys())
 
-# =======================
 # CLEAN ACCURACY
-# =======================
-print("\nCLEAN ACCURACY")
-print("-" * 60)
+print("\nCLEAN ACCURACY\n")
+
 for name, model in models.items():
     with torch.no_grad():
         acc = (model(x_test).argmax(1) == y_test).float().mean().item() * 100
     print(f"{name:20} {acc:6.2f}%")
 
-# =======================
 # ATTACKS TO TEST
-# =======================
 attacks = {
     "APGD-CE": dict(version='custom', attacks=['apgd-ce']),
     "Square":  dict(version='custom', attacks=['square'])
@@ -64,17 +54,14 @@ attacks = {
 all_results = {}
 all_adv = {}
 
-# =======================
 # RUN ATTACKS
-# =======================
 for attack_name, cfg in attacks.items():
-    print(f"\nTESTING ATTACK: {attack_name}")
-    print("-" * 60)
+    print(f"\nTESTING ATTACK: {attack_name}\n")
 
     adv_examples = {}
 
     for mname, model in models.items():
-        print(f"  Generating adversarial for {mname}")
+        print(f"Generating adversarial for {mname}")
         attacker = AutoAttack(
             model,
             norm='Linf',
@@ -86,7 +73,7 @@ for attack_name, cfg in attacks.items():
         )
         adv_examples[mname] = attacker.run_standard_evaluation(x_test, y_test, bs=250)
 
-    # transferability matrix
+    # TRANSFERABILITY MATRIX
     results = np.zeros((len(models), len(models)))
 
     for i, src in enumerate(model_names):
@@ -98,24 +85,21 @@ for attack_name, cfg in attacks.items():
     all_results[attack_name] = results
     all_adv[attack_name] = adv_examples
 
-    # print matrix (terminal)
-    print("\nTransferability matrix:")
-    print(f"{'':20}", end="")
+    # PRINT MATRIX
+    print("\nTransferability matrix:\n")
+    print(f"{'':18}", end="")
     for name in model_names:
-        print(f"{name[:15]:>16}", end="")
-    print("\n" + "-" * (20 + 16 * len(model_names)))
+        print(f"{name[:11]:>13}", end="")
+    print("\n" + "-" * (18 + 12 * len(model_names)))
 
     for i, name in enumerate(model_names):
-        print(f"{name:20}", end="")
+        print(f"{name:18}", end="")
         for j in range(len(model_names)):
-            print(f"{results[i,j]:16.2f}", end="")
+            print(f"{results[i,j]:12.2f}", end="")
         print()
 
-# =======================
 # ROBUST ACCURACY
-# =======================
-print("\nROBUST ACCURACY (diagonal)")
-print("-" * 60)
+print("\nROBUST ACCURACY\n")
 print(f"{'Model':20}", end="")
 for a in attacks:
     print(f"{a:>12}", end="")
@@ -127,9 +111,7 @@ for i, name in enumerate(model_names):
         print(f"{all_results[a][i,i]:12.2f}", end="")
     print()
 
-# =======================
 # VISUALIZATION
-# =======================
 n_show = 8
 
 for attack_name in attacks:
@@ -149,13 +131,11 @@ for attack_name in attacks:
         axes[1,0].set_ylabel("Adversarial")
         axes[2,0].set_ylabel("Diff x10")
 
-        plt.suptitle(f"{model_name} – {attack_name} – eps={eps}")
+        plt.suptitle(f"{model_name} - {attack_name} - eps={eps}")
         plt.tight_layout()
         plt.show()
 
-# =======================
 # HEATMAPS
-# =======================
 for attack_name, results in all_results.items():
     fig, ax = plt.subplots(figsize=(10, 8))
     im = ax.imshow(results, cmap='RdYlGn', vmin=0, vmax=100)
@@ -167,7 +147,7 @@ for attack_name, results in all_results.items():
     ax.set_yticklabels(model_names)
     ax.set_xlabel("Tested on")
     ax.set_ylabel("Adversarial from")
-    ax.set_title(f"Transferability Matrix – {attack_name}")
+    ax.set_title(f"Transferability Matrix - {attack_name}")
 
     for i in range(len(model_names)):
         for j in range(len(model_names)):
@@ -179,4 +159,5 @@ for attack_name, results in all_results.items():
     plt.tight_layout()
     plt.show()
 
-print("\nDONE.")
+print("\nDONE...")
+
