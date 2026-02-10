@@ -22,7 +22,8 @@ subset = Subset(test_data, idx)
 loader = DataLoader(subset, batch_size=n_test)
 for x_test, y_test in loader:
     break
-
+x_test = x_test.to(device)
+y_test = y_test.to(device)
 # LOAD MODELS
 models = {}
 
