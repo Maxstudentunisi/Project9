@@ -2,8 +2,9 @@ import torch
 import numpy as np
 import matplotlib.pyplot as plt
 from torchvision import datasets, transforms
+from torch.utils.data import Subset, DataLoader
 from autoattack import AutoAttack
-from torch.utils.data import DataLoader, Subset
+
 from models import get_model
 
 # PARAMETERS
@@ -16,8 +17,6 @@ transform = transforms.ToTensor()
 test_data = datasets.MNIST('./data', train=False, transform=transform, download=True)
 
 idx = np.random.choice(len(test_data), n_test, replace=False)
-#x_test = torch.stack([test_data[i][0] for i in idx]).to(device)
-#y_test = torch.tensor([test_data[i][1] for i in idx]).to(device)
 subset = Subset(test_data, idx)
 loader = DataLoader(subset, batch_size=n_test)
 for x_test, y_test in loader:
