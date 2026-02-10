@@ -16,8 +16,12 @@ transform = transforms.ToTensor()
 test_data = datasets.MNIST('./data', train=False, transform=transform, download=True)
 
 idx = np.random.choice(len(test_data), n_test, replace=False)
-x_test = torch.stack([test_data[i][0] for i in idx]).to(device)
-y_test = torch.tensor([test_data[i][1] for i in idx]).to(device)
+#x_test = torch.stack([test_data[i][0] for i in idx]).to(device)
+#y_test = torch.tensor([test_data[i][1] for i in idx]).to(device)
+subset = Subset(test_data, idx)
+loader = DataLoader(subset, batch_size=n_test)
+for x_test, y_test in loader:
+    break
 
 # LOAD MODELS
 models = {}
