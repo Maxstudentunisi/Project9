@@ -1,18 +1,36 @@
 import torch
 import numpy as np
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from torchvision import datasets, transforms
 from torch.utils.data import Subset, DataLoader
 from autoattack import AutoAttack
+import os
 
 from models import get_model
 
-# PARAMETERS
-eps = 0.3
-n_test = 1000
-device = 'cpu'
+# Parameters
+"""
+Testing multiple epsilon values on a single run would have made the experiments much heavier
+Also we already evaluate several models and attacks
+"""
+#eps = 0.3
+eps = 0.03
+#eps = 1.0
 
-# LOAD MNIST TEST SET
+#n_test = 500
+n_test = 1000
+
+DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
+
+# Reproducibility for experiments
+np.random.seed(42)
+torch.manual_seed(42)
+
+os.makedirs("outputs", exist_ok=True)  # Create output folder
+
+# Load MNIST test set
 transform = transforms.ToTensor()
 test_data = datasets.MNIST('./data', train=False, transform=transform, download=True)
 
@@ -21,14 +39,16 @@ subset = Subset(test_data, idx)
 loader = DataLoader(subset, batch_size=n_test)
 for x_test, y_test in loader:
     break
-x_test = x_test.to(device)
-y_test = y_test.to(device)
-# LOAD MODELS
+x_test = x_test.to(DEVICE)
+y_test = y_test.to(DEVICE)
+
+# Load models
 models = {}
 
 def load(name, arch, ckpt):
     m = get_model(arch)
-    m.load_state_dict(torch.load(ckpt, map_location=device)["state_dict"])
+    m.load_state_dict(torch.load(ckpt, map_location=DEVICE)["state_dict"])
+    m = m.to(DEVICE)  # No mismatch device between model and input
     m.eval()
     models[name] = m
 
@@ -40,44 +60,48 @@ load("mlp_noaug", "mlp", "checkpoints/mlp_noaug.pt")
 load("mlp_aug", "mlp", "checkpoints/mlp_aug.pt")
 
 model_names = list(models.keys())
+if len(models) == 0:
+    raise RuntimeError("No models loaded.")  # If no checkpoints were found stop the script
 
-# CLEAN ACCURACY
-print("\nCLEAN ACCURACY\n")
+# Clean accuracy
+print("\nClean accuracy:\n")
 
 for name, model in models.items():
     with torch.no_grad():
         acc = (model(x_test).argmax(1) == y_test).float().mean().item() * 100
     print(f"{name:20} {acc:6.2f}%")
 
-# ATTACKS TO TEST
+# Attacks to test
 attacks = {
     "APGD-CE": dict(version='custom', attacks=['apgd-ce']),
-    "Square":  dict(version='custom', attacks=['square'])
+    "FAB": dict(version='custom', attacks=['fab-t']),
+    "Square":  dict(version='custom', attacks=['square']),
 }
 
 all_results = {}
 all_adv = {}
 
-# RUN ATTACKS
+# Run attacks
 for attack_name, cfg in attacks.items():
-    print(f"\nTESTING ATTACK: {attack_name}\n")
+    print(f"\nTesting attack: {attack_name}\n")
 
     adv_examples = {}
 
     for mname, model in models.items():
         print(f"Generating adversarial for {mname}")
+        bs = 100 if DEVICE == 'cpu' else 250  # For the sake of my cpu
         attacker = AutoAttack(
             model,
             norm='Linf',
             eps=eps,
             version=cfg['version'],
             attacks_to_run=cfg['attacks'],
-            device=device,
+            device=DEVICE,
             verbose=False
         )
-        adv_examples[mname] = attacker.run_standard_evaluation(x_test, y_test, bs=250)
+        adv_examples[mname] = attacker.run_standard_evaluation(x_test, y_test, bs)
 
-    # TRANSFERABILITY MATRIX
+    # Transferability matrix
     results = np.zeros((len(models), len(models)))
 
     for i, src in enumerate(model_names):
@@ -89,7 +113,7 @@ for attack_name, cfg in attacks.items():
     all_results[attack_name] = results
     all_adv[attack_name] = adv_examples
 
-    # PRINT MATRIX
+    # Print matrix
     print("\nTransferability matrix:\n")
     print(f"{'':18}", end="")
     for name in model_names:
@@ -102,8 +126,8 @@ for attack_name, cfg in attacks.items():
             print(f"{results[i,j]:12.2f}", end="")
         print()
 
-# ROBUST ACCURACY
-print("\nROBUST ACCURACY\n")
+# Robust accuracy
+print("\nRobust accuracy summary:\n")
 print(f"{'Model':20}", end="")
 for a in attacks:
     print(f"{a:>12}", end="")
@@ -115,7 +139,11 @@ for i, name in enumerate(model_names):
         print(f"{all_results[a][i,i]:12.2f}", end="")
     print()
 
-# VISUALIZATION
+# Visualization of adversarial examples
+"""
+Show original, adversarial, and difference for each attack and model
+We save these images in "outputs" folder
+"""
 n_show = 8
 
 for attack_name in attacks:
@@ -137,9 +165,14 @@ for attack_name in attacks:
 
         plt.suptitle(f"{model_name} - {attack_name} - eps={eps}")
         plt.tight_layout()
-        plt.show()
+        plt.savefig(f"outputs/visualization_{attack_name}_{model_name}.png", dpi=300, bbox_inches="tight")
+        plt.close(fig)
 
-# HEATMAPS
+# Heatmaps
+"""
+This creates heatmap for transferability 
+The goal is to show robust accuracy for each models
+"""
 for attack_name, results in all_results.items():
     fig, ax = plt.subplots(figsize=(10, 8))
     im = ax.imshow(results, cmap='RdYlGn', vmin=0, vmax=100)
@@ -151,7 +184,7 @@ for attack_name, results in all_results.items():
     ax.set_yticklabels(model_names)
     ax.set_xlabel("Tested on")
     ax.set_ylabel("Adversarial from")
-    ax.set_title(f"Transferability Matrix - {attack_name}")
+    ax.set_title(f"Transferability Matrix - {attack_name}-eps:{eps}-Samples:{n_test}")
 
     for i in range(len(model_names)):
         for j in range(len(model_names)):
@@ -161,7 +194,8 @@ for attack_name, results in all_results.items():
                     fontsize=8)
 
     plt.tight_layout()
-    plt.show()
+    plt.savefig(f"outputs/heatmap_{attack_name}.png", dpi=300, bbox_inches="tight")
+    plt.close(fig)
 
-print("\nDONE...")
+print("\nCompilation finished...")
 
