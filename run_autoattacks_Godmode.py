@@ -17,9 +17,9 @@ N_TEST = 500  # TODO: maybe increase this later?
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 # Reproducibility for experiments
-random.seed(42)
+
 np.random.seed(42)
-torch.manual_seed(42)
+
 
 print(f"Device: {DEVICE}")
 print(f"Test samples: {N_TEST}")
