@@ -15,9 +15,9 @@ from models import get_model
 Testing multiple epsilon values on a single run would have made the experiments much heavier
 Also we already evaluate several models and attacks
 """
-#eps = 0.3
-eps = 0.03
-#eps = 1.0
+#eps = 0.3 # High threat
+#eps = 0.15 # Medium threat
+eps = 0.03 # Low threat
 
 #n_test = 500
 n_test = 1000
