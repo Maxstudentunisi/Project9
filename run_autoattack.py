@@ -28,7 +28,7 @@ DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 np.random.seed(42)
 torch.manual_seed(42)
 
-os.makedirs("outputs", exist_ok=True)  # Create output folder
+os.makedirs("outputs", exist_ok=True) # Create output folder
 
 # Load MNIST test set
 transform = transforms.ToTensor()
