@@ -48,7 +48,7 @@ models = {}
 def load(name, arch, ckpt):
     m = get_model(arch)
     m.load_state_dict(torch.load(ckpt, map_location=DEVICE)["state_dict"])
-    m = m.to(DEVICE)  # No mismatch device between model and input
+    m = m.to(DEVICE) # No mismatch device between model and input
     m.eval()
     models[name] = m
 
@@ -61,7 +61,7 @@ load("mlp_aug", "mlp", "checkpoints/mlp_aug.pt")
 
 model_names = list(models.keys())
 if len(models) == 0:
-    raise RuntimeError("No models loaded.")  # If no checkpoints were found stop the script
+    raise RuntimeError("No models loaded.") # If no checkpoints were found stop the script
 
 # Clean accuracy
 print("\nClean accuracy:\n")
@@ -89,7 +89,7 @@ for attack_name, cfg in attacks.items():
 
     for mname, model in models.items():
         print(f"Generating adversarial for {mname}")
-        bs = 100 if DEVICE == 'cpu' else 250  # For the sake of my cpu
+        bs = 100 if DEVICE == 'cpu' else 250 # For the sake of my cpu
         attacker = AutoAttack(
             model,
             norm='Linf',
