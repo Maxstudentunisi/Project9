@@ -3,7 +3,7 @@ import torch.nn.functional as F
 import torch
 
 
-def CNNLight():
+def CNNLight():                            #rete convoluzionale profonda
     return nn.Sequential(
         nn.Conv2d(1, 32, 5, padding=2),    #layer Convoluzionale, 1 img in ingresso, 32 feature map 5x5, 2pixel di bordo extra
         nn.ReLU(),                         #layer che applica funzioneRelu elemento per elemento    
@@ -19,7 +19,7 @@ def CNNLight():
         nn.Dropout(0.5),                  #spegne a caso il 50% dei neuroni 
         nn.Linear(128, 10)                #layer che passa da 128 ingressi a 10 uscite, una per classe
     )
-def CNNDeep():
+def CNNDeep():                               #rete convoluzionale più profonda 4 layer convoluzionali e 2 lineari 
     return nn.Sequential(
         nn.Conv2d(1, 32, 3, padding=1),
         nn.ReLU(),
@@ -33,7 +33,7 @@ def CNNDeep():
         nn.ReLU(),
         nn.MaxPool2d(2, 2),
 
-        nn.Flatten(),                 # (B, 64*7*7)
+        nn.Flatten(),                     #(batchsize, 64*7*7)
         nn.Linear(64 * 7 * 7, 128),
         nn.ReLU(),
         nn.Dropout(0.3),
@@ -41,8 +41,8 @@ def CNNDeep():
     )
 def MLP():
     return nn.Sequential(
-        nn.Flatten(),                 # (B, 28*28)
-        nn.Linear(28 * 28, 256),
+        nn.Flatten(),                 #(Batchsize, 28*28)
+        nn.Linear(28 * 28, 256),      #layer fully connected che combina tutte le feature in input per produrre quelle in output
         nn.ReLU(),
         nn.Linear(256, 256),
         nn.ReLU(),
