@@ -1,5 +1,7 @@
 Il progetto è organizzato in vari file .py. Il file run.py è lo script principale per eseguire gli attacchi. Durante l’esecuzione viene creata automaticamente una cartella outputs/, dove vengono salvate le immagini generate con i risultati.
 
+Attenzione: ad ogni esecuzione dello script la cartella viene sostituita!
+
 I valori di epsilon e il numero di sample da testare sono definiti direttamente nel codice e alcuni sono commentati. Per provare configurazioni diverse è necessario decommentare manualmente i valori desiderati.
 
 Questa scelta è stata fatta perché il progetto prevede il test di 3 attacchi su 6 modelli: eseguire automaticamente tutte le combinazioni possibili è troppo oneroso dal punto di vista computazionale per noi, quindi i test vengono selezionati manualmente in base alle esigenze.
