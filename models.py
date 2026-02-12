@@ -12,7 +12,7 @@ def CNNLight():
         - canali->1  (immagine grayscale)
         - output channels->32 (32 feature map)
         - kernel size->5 (filtro 5x5)
-        - padding->2 mantiene dimensione spaziale (28x28 -> 28x28) a
+        - padding->2 mantiene dimensione spaziale (28x28 -> 28x28) 
         """
     return nn.Sequential(
         nn.Conv2d(1, 32, 5, padding=2),    
