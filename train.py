@@ -1,8 +1,6 @@
-import argparse
 import torch
 from torch import nn
 from torch.optim import Adam
-
 from models import get_model
 from data import get_loaders
 
@@ -23,16 +21,8 @@ def accuracy(model, loader, device):
 
 
 def main():
-    """
-    p = argparse.ArgumentParser()
-    p.add_argument("--model", type=str, default="cnn_light")
-    p.add_argument("--aug", type=int, default=0)
-    p.add_argument("--epochs", type=int, default=8)
-    p.add_argument("--batch", type=int, default=128)
-    p.add_argument("--lr", type=float, default=1e-3)
-    p.add_argument("--out", type=str, default="checkpoints/model_best.pt")
-    args = p.parse_args()
-"""
+
+    out='/content/drive/MyDrive/NeuralNetworksProject/checkpoints_new/mlp_aug_best.pt'
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")                             # Se CUDA è disponibile usa GPU, altrimenti CPU
     out='/content/drive/MyDrive/NeuralNetworksProject/checkpoints_new/mlp_aug_best.pt'
     # Creo dataloader di train/val/test
@@ -52,23 +42,24 @@ def main():
             loss = loss_fn(model(x), y)                                    #il modello produce logits, la loss li confronta con le etichette
             loss.backward()                                                # Backprop: calcola i gradienti
             opt.step()                                                     # Step ottimizzatore: aggiorna i pesi
-
+            
+        #calcolo accuracy su validation e test set
         val_acc = accuracy(model, val_loader, device)
         test_acc = accuracy(model, test_loader, device)
         print(f"Epoch {ep} | val_acc={val_acc:.4f} | test_acc={test_acc:.4f}")
-
+        
+        # Se la validation accuracy migliora, salva il checkpoint "migliore"
         if val_acc > best_val:
             best_val = val_acc
             torch.save({
-                "model_name": args.model,
-                "aug": bool(args.aug),
-                "state_dict": model.state_dict(),
-                "val_acc": best_val
-            }, args.out)
+                "model_name": args.model,                        #nome modello
+                "aug": bool(args.aug),                           #Augmentatio on/off
+                "state_dict": model.state_dict(),                #pesi del modello 
+                "val_acc": best_val                              #migliore validation 
+            }, args.out)    
             print("  Salvato checkpoint BEST:", args.out)
 
-    print("Fine. Best val acc:", best_val)
+    print("Fine. Best val acc:", best_val)                    # Fine training: stampa miglior risultato di validation
 
 
-if __name__ == "__main__":
-    main()
+
