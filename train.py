@@ -26,10 +26,10 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")                             # Se CUDA è disponibile usa GPU, altrimenti CPU
     out='/content/drive/MyDrive/NeuralNetworksProject/checkpoints_new/mlp_aug_best.pt'
     # Creo dataloader di train/val/test
-    train_loader, val_loader, test_loader = get_loaders(batch_size=args.batch, aug=bool(args.aug))    # aug=bool(args.aug): se args.aug è 1 -> True, se 0 -> False
-    model = get_model(args.model).to(device)                                                          # Istanzia il modello scelto e lo sposta su device
+    train_loader, val_loader, test_loader = get_loaders(batch_size=batch, aug=bool(aug))    # aug=bool(aug): se aug è 1 -> True, se 0 -> False
+    model = get_model(model).to(device)                                                          # Istanzia il modello scelto e lo sposta su device
     
-    opt = Adam(model.parameters(), lr=args.lr)                                                        # Ottimizzatore Adam per aggiornare i pesi del modello
+    opt = Adam(model.parameters(), lr=lr)                                                        # Ottimizzatore Adam per aggiornare i pesi del modello
     loss_fn = nn.CrossEntropyLoss()                                                                   # Funzione di loss per classificazione multi-classe
 
     best_val = -1.0
@@ -52,12 +52,12 @@ def main():
         if val_acc > best_val:
             best_val = val_acc
             torch.save({
-                "model_name": args.model,                        #nome modello
-                "aug": bool(args.aug),                           #Augmentatio on/off
+                "model_name": model,                        #nome modello
+                "aug": bool(aug),                           #Augmentatio on/off
                 "state_dict": model.state_dict(),                #pesi del modello 
                 "val_acc": best_val                              #migliore validation 
-            }, args.out)    
-            print("  Salvato checkpoint BEST:", args.out)
+            }, out)    
+            print("  Salvato checkpoint BEST:", out)
 
     print("Fine. Best val acc:", best_val)                    # Fine training: stampa miglior risultato di validation
 
