@@ -21,6 +21,10 @@ def accuracy(model, loader, device):
 
 
 def main():
+    batch=128
+    aug=True
+    epochs=8
+    model="mlp"
 
     out='/content/drive/MyDrive/NeuralNetworksProject/checkpoints_new/mlp_aug_best.pt'
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")                             # Se CUDA è disponibile usa GPU, altrimenti CPU
